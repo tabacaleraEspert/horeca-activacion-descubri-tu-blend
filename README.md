@@ -1,36 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Van Kiff · Descubrí tu Blend
 
-## Getting Started
+App de activación BTL (Cerro Catedral, invierno 2026). El consumidor responde un
+quiz corto y recibe el **blend Van Kiff** que describe su personalidad, con CTA
+final hacia el Master Blender.
 
-First, run the development server:
+## Cómo funciona el resultado
+
+1. **Datos del consumidor** (nombre, email, tel, edad, género) al inicio.
+2. **Segmentación demográfica** → define el *pool de blends elegibles* según
+   edad + sexo (de la presentación de perfiles).
+3. **Quiz** de 5–7 preguntas (≥2 Montaña + ≥3 Lifestyle, <7 min). Cada opción
+   suma a una personalidad.
+4. **Resultado**: gana la personalidad mejor rankeada **que esté dentro del pool
+   elegible**. Si la #1 no aplica al perfil pero la #2 sí, sale la #2.
+
+### Los 7 blends
+
+| Blend | Sabor | Personalidad | Sexo | Edad |
+|---|---|---|---|---|
+| MELLOW | Vainilla | ☕ Contemplativo | Mujer | 25–45 |
+| NATIVE | Natural | 🌲 Nativo | Ambos | 18–45 |
+| HAZEL | Chocolate | 🍫 Indulgente | Ambos | 18–30 |
+| BLOSSOM | Cherry | 🌹 Romántico | Mujer | 18–28 |
+| VID | Uva | 🍷 Sommelier | Ambos | 28+ |
+| MINE | Menta | 🎉 Fiestero | Ambos | <30 |
+| AMERICAN | Americano | 🥃 Curador | Masculino | 30+ |
+
+## Stack
+
+Next.js 16 (App Router) · TypeScript · Tailwind v4 · Supabase (leads).
+
+## Desarrollo
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+La app funciona sin Supabase (los leads se loguean en consola, no se persisten).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Supabase (leads)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Crear proyecto en supabase.com.
+2. SQL Editor → ejecutar `supabase/schema.sql`.
+3. Copiar `.env.example` a `.env.local` y completar `NEXT_PUBLIC_SUPABASE_URL` y
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY` (Settings → API).
+4. Reiniciar `npm run dev`. Los leads se guardan en la tabla `leads`.
 
-## Learn More
+## Estructura
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/lib/
+  blends.ts      # 7 blends + segmentación demográfica
+  questions.ts   # banco Montaña (29) + Lifestyle (10)
+  engine.ts      # selección de preguntas + scoring + resultado
+  supabase.ts    # cliente (degrada si no hay credenciales)
+src/components/
+  BlendQuiz.tsx  # máquina de estados: welcome → lead → quiz → result
+  Welcome / LeadForm / Quiz / Result
+src/app/api/leads/route.ts   # POST guarda lead + resultado
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Vercel: importar el repo, cargar las dos env vars, deploy. Acceder desde la
+tablet del stand por navegador.
