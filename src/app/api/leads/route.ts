@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { supabase, supabaseEnabled } from "@/lib/supabase";
+
+// URL del Web App de Google Apps Script (ver supabase/../sheets/README).
+// Se setea como env var; si falta, no rompemos la experiencia del evento.
+const WEBHOOK = process.env.SHEETS_WEBHOOK_URL;
 
 export async function POST(req: Request) {
   let body: unknown;
@@ -25,19 +28,39 @@ export async function POST(req: Request) {
     );
   }
 
-  const record = { nombre, email, telefono, edad, genero, blend, personalidad };
+  // los leads encolados offline llegan tarde: respetar su timestamp original
+  const clientTs = String(b.ts ?? "");
+  const record = {
+    ts: Number.isNaN(Date.parse(clientTs)) ? new Date().toISOString() : clientTs,
+    nombre,
+    email,
+    telefono,
+    edad,
+    genero,
+    blend,
+    personalidad,
+  };
 
-  // Sin Supabase configurado: no rompemos la experiencia del evento.
-  if (!supabaseEnabled || !supabase) {
-    console.warn("[leads] Supabase no configurado — lead no persistido:", record);
+  // Sin webhook configurado: no rompemos el evento, solo logueamos.
+  if (!WEBHOOK) {
+    console.warn("[leads] SHEETS_WEBHOOK_URL no configurado — lead no persistido:", record);
     return NextResponse.json({ ok: true, persisted: false });
   }
 
-  const { error } = await supabase.from("leads").insert(record);
-  if (error) {
-    console.error("[leads] error al insertar:", error.message);
-    return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  try {
+    // text/plain evita el preflight CORS de Apps Script; el body sigue siendo JSON.
+    const res = await fetch(WEBHOOK, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(record),
+    });
+    if (!res.ok) {
+      console.error("[leads] webhook respondió", res.status);
+      return NextResponse.json({ ok: false, error: `webhook ${res.status}` }, { status: 502 });
+    }
+    return NextResponse.json({ ok: true, persisted: true });
+  } catch (e) {
+    console.error("[leads] error posteando al webhook:", e);
+    return NextResponse.json({ ok: false, error: "webhook unreachable" }, { status: 502 });
   }
-
-  return NextResponse.json({ ok: true, persisted: true });
 }

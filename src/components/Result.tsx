@@ -1,13 +1,13 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { motion } from "motion/react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Blend, Lead } from "@/lib/types";
-
-const PackageReveal = dynamic(() => import("./three/PackageReveal"), {
-  ssr: false,
-});
+// Import estático a propósito (kiosko offline): un chunk lazy que falle sin
+// wifi rompe la pantalla de resultado. three.js va al bundle inicial y queda
+// precacheado siempre. Result nunca se renderiza en SSR (stage inicial es
+// "welcome"), así que el Canvas no corre en el server.
+import PackageReveal from "./three/PackageReveal";
 
 export default function Result({
   blend,
@@ -24,6 +24,17 @@ export default function Result({
     if (!blend.bgs.length) return null;
     return blend.bgs[Math.floor(Math.random() * blend.bgs.length)];
   }, [blend]);
+
+  // En landscape (tablet apaisada) el paquete va a la izquierda y el texto a
+  // la derecha; en portrait, paquete arriba y texto abajo.
+  const [landscape, setLandscape] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(orientation: landscape)");
+    const update = () => setLandscape(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   const personality =
     genero === "mujer" ? blend.personalityF : blend.personality;
@@ -79,19 +90,23 @@ export default function Result({
         </div>
       )}
 
-      {/* Reveal WebGL del paquete (arriba) */}
-      <div className="pointer-events-none absolute inset-0 z-10">
-        <PackageReveal pkg={blend.pkg} color={blend.color} yOffset={2.4} />
+      {/* Reveal WebGL del paquete (arriba en portrait, izquierda en landscape) */}
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-full landscape:w-1/2">
+        <PackageReveal
+          pkg={blend.pkg}
+          color={blend.color}
+          yOffset={landscape ? 0.35 : 1.25}
+        />
       </div>
 
-      {/* Contenido: centrado en la mitad inferior para usar el espacio */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-end overflow-y-auto px-5 pb-7 pt-[38vh]">
-        <div className="mx-auto w-full max-w-2xl text-center text-white">
+      {/* Contenido: mitad inferior en portrait, mitad derecha en landscape */}
+      <div className="absolute inset-0 z-20 flex flex-col justify-end overflow-y-auto px-5 pb-14 pt-[45vh] landscape:left-1/2 landscape:justify-center landscape:px-8 landscape:pb-8 landscape:pt-8">
+        <div className="mx-auto w-full max-w-2xl text-center text-white landscape:max-w-lg">
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.45, duration: 0.5 }}
-            className="text-[11px] font-bold uppercase tracking-[0.4em] text-white/70 sm:text-sm"
+            className="text-lg font-bold uppercase tracking-[0.35em] text-white/85 sm:text-xl"
           >
             {nombre ? `${nombre}, tu blend es` : "Tu blend es"}
           </motion.p>
@@ -103,7 +118,11 @@ export default function Result({
             transition={{ delay: 1.5, type: "spring", stiffness: 170, damping: 15 }}
             className="font-display font-black uppercase leading-[0.85] tracking-tight"
             style={{
-              fontSize: "clamp(4rem, 19vw, 11rem)",
+              // en landscape el nombre vive en media pantalla: más chico para
+              // que "AMERICAN" (el más largo) no se corte en el borde
+              fontSize: landscape
+                ? "clamp(2.75rem, 11.5vmin, 6rem)"
+                : "clamp(3.5rem, 16vmin, 9rem)",
               textShadow: "0 6px 40px rgba(0,0,0,0.6)",
             }}
           >
@@ -115,8 +134,13 @@ export default function Result({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.85, duration: 0.5 }}
-            className="mt-2 font-display font-extrabold uppercase tracking-tight"
-            style={{ fontSize: "clamp(1.5rem, 7vw, 3.25rem)", color: blend.color }}
+            className="mt-2 font-display font-extrabold uppercase tracking-tight text-white"
+            style={{
+              fontSize: "clamp(1.5rem, 6.5vmin, 3rem)",
+              // Blanco para garantizar contraste; el color de marca queda como
+              // glow detrás (el fondo puede ser del mismo tono del blend).
+              textShadow: `0 0 22px ${blend.color}, 0 0 8px ${blend.color}, 0 2px 10px rgba(0,0,0,0.55)`,
+            }}
           >
             sos {personality}
           </motion.p>
@@ -135,7 +159,7 @@ export default function Result({
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 2.15, duration: 0.5 }}
-            className="mx-auto mt-4 max-w-md text-[13px] leading-relaxed text-white/80"
+            className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-white/80"
           >
             {blend.description}
           </motion.p>
@@ -146,11 +170,11 @@ export default function Result({
             transition={{ delay: 2.35, duration: 0.5 }}
             className="mt-6"
           >
-            <div className="inline-flex flex-col items-center rounded-3xl bg-white px-7 py-4 text-ink shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
-              <span className="font-display text-sm font-black uppercase tracking-wide">
+            <div className="inline-flex flex-col items-center rounded-3xl bg-white px-8 py-5 text-ink shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
+              <span className="font-display text-base font-black uppercase tracking-wide">
                 Acercate al Master Blender 🔥
               </span>
-              <span className="mt-0.5 text-[12px] font-semibold text-ink/60">
+              <span className="mt-0.5 text-[13px] font-semibold text-ink/60">
                 Probá tu sabor y descubrí los demás
               </span>
             </div>
@@ -158,7 +182,7 @@ export default function Result({
             <div>
               <button
                 onClick={onRestart}
-                className="mt-4 rounded-full border border-white/30 px-7 py-2 text-sm font-semibold text-white/80 transition hover:bg-white/10 active:scale-95"
+                className="mt-4 rounded-full border border-white/30 px-8 py-3 text-base font-semibold text-white/80 transition hover:bg-white/10 active:scale-95"
               >
                 Hacer otro perfil
               </button>

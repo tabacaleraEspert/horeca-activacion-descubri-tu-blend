@@ -1,110 +1,53 @@
 # Deploy a Azure
 
-## Opción 1: Usando Azure CLI (Recomendado)
+## URL de producción
 
-### Requisitos
-- Azure CLI instalado: https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
-- Cuenta de Azure activa
+```
+https://descubri-tu-blend.azurewebsites.net
+```
 
-### Pasos
+- **Web App**: `descubri-tu-blend` (Node 22 LTS, Linux)
+- **Resource Group**: `descubri-tu-blend-rg`
+- **Plan**: `descubri-blend-plan` (B1 propio, eastus)
 
-1. **Loguearse en Azure**
+## Cómo deployar
+
+Desde la raíz del proyecto (requiere `az login` con la cuenta de Espert):
+
 ```bash
-az login
+# 1. Empaquetar el código (sin node_modules ni build local)
+zip -qr /tmp/deploy.zip . -x "node_modules/*" ".next/*" ".git/*" "tsconfig.tsbuildinfo"
+
+# 2. Deploy con build remoto (Oryx corre npm ci + next build en Azure)
+az webapp deploy --resource-group descubri-tu-blend-rg --name descubri-tu-blend \
+  --src-path /tmp/deploy.zip --type zip
 ```
 
-2. **Crear un Resource Group** (reemplaza con tu nombre)
+El app setting `SCM_DO_BUILD_DURING_DEPLOYMENT=true` ya está configurado: Azure
+instala dependencias y buildea al recibir el zip. `next start` respeta el
+puerto que asigna Azure ($PORT), no hace falta startup command.
+
+## Variables de entorno
+
 ```bash
-az group create --name descubri-tu-blend-rg --location eastus
+# Leads → Google Sheet (sin esto la app funciona pero no persiste leads)
+az webapp config appsettings set --resource-group descubri-tu-blend-rg --name descubri-tu-blend \
+  --settings SHEETS_WEBHOOK_URL="https://script.google.com/macros/s/<ID>/exec"
 ```
 
-3. **Crear un App Service Plan**
-```bash
-az appservice plan create --name descubri-tu-blend-plan --resource-group descubri-tu-blend-rg --sku B1 --is-linux
-```
-
-4. **Crear la Web App**
-```bash
-az webapp create --resource-group descubri-tu-blend-rg --plan descubri-tu-blend-plan --name descubri-tu-blend-app --runtime "NODE|20"
-```
-
-5. **Configurar variables de entorno** (si necesitas Supabase u otros)
-```bash
-az webapp config appsettings set --resource-group descubri-tu-blend-rg --name descubri-tu-blend-app --settings WEBSITES_PORT=3000 NODE_ENV=production
-```
-
-6. **Deployar desde Git**
-```bash
-az webapp deployment source config-zip --resource-group descubri-tu-blend-rg --name descubri-tu-blend-app --src <archivo.zip>
-```
-
-O si usas Git:
-```bash
-az webapp up --resource-group descubri-tu-blend-rg --name descubri-tu-blend-app --runtime "NODE|20"
-```
-
----
-
-## Opción 2: Usando Docker + Azure Container Registry
-
-### Requisitos
-- Docker instalado
-- Azure CLI
-
-### Pasos
-
-1. **Crear un Azure Container Registry**
-```bash
-az acr create --resource-group descubri-tu-blend-rg --name descubriTuBlendRegistry --sku Basic
-```
-
-2. **Loguearse en el registry**
-```bash
-az acr login --name descubriTuBlendRegistry
-```
-
-3. **Build y push de la imagen**
-```bash
-docker build -t descubriTuBlendRegistry.azurecr.io/descubri-tu-blend:latest .
-docker push descubriTuBlendRegistry.azurecr.io/descubri-tu-blend:latest
-```
-
-4. **Deployar en App Service**
-```bash
-az webapp create --resource-group descubri-tu-blend-rg --plan descubri-tu-blend-plan --name descubri-tu-blend-app --deployment-container-image-name descubriTuBlendRegistry.azurecr.io/descubri-tu-blend:latest
-
-az webapp config container set --resource-group descubri-tu-blend-rg --name descubri-tu-blend-app --docker-custom-image-name descubriTuBlendRegistry.azurecr.io/descubri-tu-blend:latest --docker-registry-server-url https://descubriTuBlendRegistry.azurecr.io
-```
-
----
-
-## Opción 3: GitHub Actions (Automático)
-
-Si tu repo está en GitHub, puedes usar GitHub Actions para auto-deployar:
-
-1. Ir a GitHub > Settings > Secrets
-2. Agregar secretos necesarios para Azure
-3. Crear workflow en `.github/workflows/azure-deploy.yml`
-
----
-
-## URL de la App
-
-Después del deploy, tu app estará disponible en:
-```
-https://descubri-tu-blend-app.azurewebsites.net
-```
+Ver `sheets/README.md` para crear el Web App de Apps Script.
 
 ## Troubleshooting
 
-- **Puerto**: La app corre en puerto 3000. Azure lo mapea automáticamente.
-- **Logs en vivo**: 
 ```bash
-az webapp log tail --resource-group descubri-tu-blend-rg --name descubri-tu-blend-app
+# Logs en vivo
+az webapp log tail --resource-group descubri-tu-blend-rg --name descubri-tu-blend
+
+# Estado del último deploy
+az webapp deployment list-publishing-credentials --resource-group descubri-tu-blend-rg --name descubri-tu-blend
 ```
 
-- **Conexión a Supabase**: 
-Configura las env vars en Azure:
-```bash
-az webapp config appsettings set --resource-group descubri-tu-blend-rg --name descubri-tu-blend-app --settings SUPABASE_URL=... SUPABASE_KEY=...
-```
+> Nota kiosko: tras cada deploy el service worker (`public/sw.js`) debe subir
+> de versión de caché (`vk-blend-vN`) para que la tablet tome assets frescos.
+
+> ⚠️ **2026-07-23**: `horeca-blend-espert` (rg-horeca-prod) fue ELIMINADA — era un deploy paralelo sin usuarios. La app canónica es `descubri-tu-blend` (descubri-tu-blend-rg, eastus): los QRs impresos apuntan a esa URL. Deployar SIEMPRE ahí.

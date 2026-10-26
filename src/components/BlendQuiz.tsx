@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { computeResult, selectQuestions } from "@/lib/engine";
+import { submitLead } from "@/lib/leadQueue";
 import type { Lead, Option, Question, QuizResult } from "@/lib/types";
 import AttractMode from "./AttractMode";
 import LeadForm from "./LeadForm";
@@ -27,24 +28,18 @@ export default function BlendQuiz() {
     setStage("quiz");
   }
 
-  async function finishQuiz(answers: Option[]) {
+  function finishQuiz(answers: Option[]) {
     if (!lead) return;
     const r = computeResult(answers, lead);
     setResult(r);
     setStage("result");
-    try {
-      await fetch("/api/leads", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...lead,
-          blend: r.blend.name,
-          personalidad: r.blend.personality,
-        }),
-      });
-    } catch {
-      /* el evento no se interrumpe por la red */
-    }
+    // offline-first: si no hay red queda en cola y se reenvía solo
+    void submitLead({
+      ...lead,
+      blend: r.blend.name,
+      personalidad: r.blend.personality,
+      ts: new Date().toISOString(),
+    });
   }
 
   function restart() {
@@ -94,7 +89,7 @@ export default function BlendQuiz() {
 
   return (
     <main
-      className="relative flex min-h-dvh w-full items-center justify-center overflow-x-hidden py-12"
+      className="relative flex min-h-dvh w-full items-center justify-center overflow-x-hidden py-10 landscape:py-8"
       style={{
         background:
           "radial-gradient(125% 90% at 50% 0%, #16222e 0%, #0c1017 55%, #08090d 100%)",

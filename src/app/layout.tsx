@@ -18,6 +18,16 @@ export const metadata: Metadata = {
   title: "Van Kiff · Descubrí tu Blend",
   description:
     "Descubrí tu blend, encontrá tu mejor versión. Activación Van Kiff · Cerro Catedral.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Descubrí tu Blend",
+  },
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport = {
@@ -25,6 +35,7 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

@@ -2,17 +2,13 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
+import { PRELOAD_VIDEOS } from "@/lib/assets";
 import { ALL_BLENDS } from "@/lib/blends";
 
 type Media = { type: "image" | "video"; src: string };
 
 // Videos de marca (AUDIOVISUALES WINTER 2025) + fotos de arte como respaldo.
-const VIDEOS: Media[] = [
-  { type: "video", src: "/attract/short1.mp4" },
-  { type: "video", src: "/attract/afterski1.mp4" },
-  { type: "video", src: "/attract/cobertura.mp4" },
-  { type: "video", src: "/attract/nico.mp4" },
-];
+const VIDEOS: Media[] = PRELOAD_VIDEOS.map((src) => ({ type: "video", src }));
 
 const IMAGES: Media[] = ALL_BLENDS.flatMap((b) =>
   b.bgs.map((src) => ({ type: "image" as const, src }))
@@ -87,14 +83,18 @@ export default function AttractMode({ onDismiss }: { onDismiss: () => void }) {
       />
 
       <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/brand/logo-art.png" alt="Van Kiff" className="w-64 sm:w-80" />
         <motion.p
-          animate={{ opacity: [0.35, 1, 0.35] }}
+          animate={{ opacity: [0.4, 1, 0.4], scale: [1, 1.04, 1] }}
           transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-          className="mt-12 font-display text-lg font-extrabold uppercase tracking-[0.35em] sm:text-xl"
+          className="font-display font-black uppercase leading-[0.95] tracking-[0.18em]"
+          style={{
+            fontSize: "clamp(2.75rem, 11vmin, 6rem)",
+            textShadow: "0 6px 40px rgba(0,0,0,0.7)",
+          }}
         >
-          Tocá para empezar
+          Tocá para
+          <br />
+          empezar
         </motion.p>
       </div>
     </div>

@@ -3,7 +3,7 @@
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTexture } from "@react-three/drei";
-import { Suspense, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 
 const easeOutCubic = (x: number) => 1 - Math.pow(1 - x, 3);
@@ -190,15 +190,14 @@ function CameraShake() {
   return null;
 }
 
-function Package({ pkg }: { pkg: string }) {
-  const tex = useTexture(pkg);
+function Package({ tex }: { tex: THREE.Texture }) {
   const group = useRef<THREE.Group>(null);
   const start = useRef<number | null>(null);
   const { viewport } = useThree();
 
   const img = tex.image as { width?: number; height?: number } | undefined;
   const aspect = (img?.width ?? 1300) / (img?.height ?? 1000);
-  const w = Math.min(viewport.width * 0.82, 6.2);
+  const w = Math.min(viewport.width * 0.72, 5.3);
   const h = w / aspect;
 
   useFrame((state) => {
@@ -238,6 +237,52 @@ function Package({ pkg }: { pkg: string }) {
   );
 }
 
+// Escena: suspende hasta que la textura del paquete está cargada, y recién
+// ahí monta TODO junto (paquete + estallido + bloom). Así la explosión nunca
+// ocurre con la pantalla vacía ni el paquete llega tarde: disparan sincronizados.
+function Scene({
+  pkg,
+  color,
+  yOffset,
+}: {
+  pkg: string;
+  color: string;
+  yOffset: number;
+}) {
+  const tex = useTexture(pkg);
+
+  // El Bloom (postproceso full-screen) es lo más caro: corre solo durante el
+  // estallido y se apaga al asentarse, así el reposo no quema GPU en la tablet.
+  const [glow, setGlow] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setGlow(false), 2600);
+    return () => clearTimeout(t);
+  }, []);
+
+  return (
+    <>
+      <CameraShake />
+      <Flash />
+      <group position={[0, yOffset, 0]}>
+        <Package tex={tex} />
+        <Particles color={color} count={150} size={0.32} speed={7} life={1.5} whiteRatio={0.35} />
+        <Particles color={color} count={55} size={0.7} speed={9} life={1.7} whiteRatio={0.2} />
+        <Shockwave color={color} />
+      </group>
+      {glow && (
+        <EffectComposer>
+          <Bloom
+            intensity={0.8}
+            luminanceThreshold={0.3}
+            luminanceSmoothing={0.5}
+            mipmapBlur
+          />
+        </EffectComposer>
+      )}
+    </>
+  );
+}
+
 export default function PackageReveal({
   pkg,
   color,
@@ -249,29 +294,14 @@ export default function PackageReveal({
 }) {
   return (
     <Canvas
-      dpr={[1, 1.8]}
-      gl={{ antialias: true, alpha: true, powerPreference: "high-performance" }}
+      dpr={[1, 1.5]}
+      gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
       camera={{ position: [0, 0, 9], fov: 42 }}
     >
       <ambientLight intensity={1} />
-      <CameraShake />
-      <Flash />
-      <group position={[0, yOffset, 0]}>
-        <Suspense fallback={null}>
-          <Package pkg={pkg} />
-        </Suspense>
-        <Particles color={color} count={230} size={0.32} speed={7} life={1.5} whiteRatio={0.35} />
-        <Particles color={color} count={80} size={0.7} speed={9} life={1.7} whiteRatio={0.2} />
-        <Shockwave color={color} />
-      </group>
-      <EffectComposer>
-        <Bloom
-          intensity={0.95}
-          luminanceThreshold={0.28}
-          luminanceSmoothing={0.5}
-          mipmapBlur
-        />
-      </EffectComposer>
+      <Suspense fallback={null}>
+        <Scene pkg={pkg} color={color} yOffset={yOffset} />
+      </Suspense>
     </Canvas>
   );
 }
