@@ -51,6 +51,20 @@ export function selectQuestions(): Question[] {
   return [...pick(MONTANA, m), ...pick(LIFESTYLE, l)];
 }
 
+/**
+ * Sortea n preguntas del banco que, entre todas sus opciones, cubran las 7
+ * personalidades (si no se logra tras varios intentos, devuelve la última).
+ */
+export function selectCovering(bank: Question[], n: number): Question[] {
+  let best = pick(bank, n);
+  for (let i = 0; i < 60; i++) {
+    const keys = new Set(best.flatMap((q) => q.options.map((o) => o.personality)));
+    if (keys.size === PERSONALITY_ORDER.length) break;
+    best = pick(bank, n);
+  }
+  return best;
+}
+
 function genderEligible(blend: Blend, lead: Lead): boolean {
   if (lead.genero === "otro") return true; // sin filtro de género
   if (blend.gender === "ambos") return true;
@@ -71,8 +85,9 @@ export function eligibleBlends(lead: Lead): Blend[] {
  * 2. Arma el ranking.
  * 3. Gana la personalidad mejor rankeada que esté DENTRO del pool elegible
  *    (segmentación por edad + sexo). Si la #1 no aplica pero la #2 sí, va la #2.
+ *    Sin lead (juegos sin formulario) todos los blends son elegibles.
  */
-export function computeResult(answers: Option[], lead: Lead): QuizResult {
+export function computeResult(answers: Option[], lead: Lead | null): QuizResult {
   const scores: Record<PersonalityKey, number> = {
     contemplativo: 0,
     nativo: 0,
@@ -91,7 +106,7 @@ export function computeResult(answers: Option[], lead: Lead): QuizResult {
   const ranking = PERSONALITY_ORDER.map((key) => ({ key, score: scores[key] }))
     .sort((a, b) => b.score - a.score || jitter[b.key] - jitter[a.key]);
 
-  const pool = new Set(eligibleBlends(lead).map((b) => b.key));
+  const pool = new Set((lead ? eligibleBlends(lead) : ALL_BLENDS).map((b) => b.key));
 
   // primer rankeado dentro del pool elegible
   let winnerKey: PersonalityKey | null = null;

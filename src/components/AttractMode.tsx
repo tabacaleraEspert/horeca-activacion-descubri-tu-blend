@@ -1,28 +1,32 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
-import { PRELOAD_VIDEOS } from "@/lib/assets";
-import { ALL_BLENDS } from "@/lib/blends";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { GameConfig } from "@/lib/types";
 
 type Media = { type: "image" | "video"; src: string };
 
-// Videos de marca (AUDIOVISUALES WINTER 2025) + fotos de arte como respaldo.
-const VIDEOS: Media[] = PRELOAD_VIDEOS.map((src) => ({ type: "video", src }));
-
-const IMAGES: Media[] = ALL_BLENDS.flatMap((b) =>
-  b.bgs.map((src) => ({ type: "image" as const, src }))
-);
-
-const MEDIA: Media[] = [...VIDEOS, ...IMAGES];
-
-export default function AttractMode({ onDismiss }: { onDismiss: () => void }) {
+// Videos de marca del juego + fotos de arte como respaldo.
+export default function AttractMode({
+  media: { videos, images },
+  onDismiss,
+}: {
+  media: GameConfig["attract"];
+  onDismiss: () => void;
+}) {
+  const MEDIA = useMemo<Media[]>(
+    () => [
+      ...videos.map((src) => ({ type: "video" as const, src })),
+      ...images.map((src) => ({ type: "image" as const, src })),
+    ],
+    [videos, images]
+  );
   const [i, setI] = useState(0);
   const current = MEDIA[i] ?? null;
 
   const next = useCallback(() => {
     setI((p) => (MEDIA.length ? (p + 1) % MEDIA.length : 0));
-  }, []);
+  }, [MEDIA]);
 
   // imágenes: avanzan por tiempo. videos: avanzan al terminar (onEnded).
   useEffect(() => {

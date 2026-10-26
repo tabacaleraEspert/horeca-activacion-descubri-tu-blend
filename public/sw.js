@@ -3,8 +3,8 @@
 // se descargan enteros (respuestas 200) y quedan en Cache Storage → tras la
 // primera carga online la app funciona entera sin wifi.
 
-const CACHE = "vk-blend-v4";
-const CORE = ["/", "/manifest.webmanifest"];
+const CACHE = "vk-blend-v5";
+const CORE = ["/", "/idolo", "/manifest.webmanifest", "/idolo.webmanifest"];
 
 self.addEventListener("install", (event) => {
   // Disponible apenas se instala.
@@ -77,14 +77,19 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return; // solo same-origin
 
   // Navegación (HTML): network-first con fallback a caché (offline).
+  // Cacheada por ruta: "/" (blend) e "/idolo" son juegos distintos.
   if (req.mode === "navigate") {
+    const key = url.pathname.replace(/\/$/, "") || "/";
     event.respondWith(
       fetch(req)
         .then((res) => {
-          caches.open(CACHE).then((c) => c.put("/", res.clone()));
+          if (res && res.status === 200) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(key, copy));
+          }
           return res;
         })
-        .catch(() => caches.match("/").then((r) => r || caches.match(req)))
+        .catch(() => caches.match(key).then((r) => r || caches.match("/")))
     );
     return;
   }

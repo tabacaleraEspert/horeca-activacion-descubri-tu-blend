@@ -2,7 +2,7 @@
 
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
-import type { Blend, Lead } from "@/lib/types";
+import type { Blend, GameConfig, Lead } from "@/lib/types";
 // Import estático a propósito (kiosko offline): un chunk lazy que falle sin
 // wifi rompe la pantalla de resultado. three.js va al bundle inicial y queda
 // precacheado siempre. Result nunca se renderiza en SSR (stage inicial es
@@ -10,20 +10,25 @@ import type { Blend, Lead } from "@/lib/types";
 import PackageReveal from "./three/PackageReveal";
 
 export default function Result({
+  game,
   blend,
   nombre,
   genero,
   onRestart,
 }: {
+  game: GameConfig;
   blend: Blend;
   nombre: string;
   genero: Lead["genero"];
   onRestart: () => void;
 }) {
+  const video = game.result.video?.(blend) ?? null;
   const bg = useMemo(() => {
+    const own = game.result.image?.(blend);
+    if (own) return own;
     if (!blend.bgs.length) return null;
     return blend.bgs[Math.floor(Math.random() * blend.bgs.length)];
-  }, [blend]);
+  }, [blend, game]);
 
   // En landscape (tablet apaisada) el paquete va a la izquierda y el texto a
   // la derecha; en portrait, paquete arriba y texto abajo.
@@ -36,20 +41,33 @@ export default function Result({
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  const neutral = game.result.personality?.(blend);
   const personality =
-    genero === "mujer" ? blend.personalityF : blend.personality;
+    neutral ?? (genero === "mujer" ? blend.personalityF : blend.personality);
 
   return (
     <div className="fixed inset-0 overflow-hidden">
       {/* Fondo */}
-      {bg ? (
+      {video || bg ? (
         <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={bg}
-            alt=""
-            className="vk-kenburns absolute inset-0 h-full w-full object-cover"
-          />
+          {video ? (
+            <video
+              src={video}
+              poster={bg ?? undefined}
+              autoPlay
+              muted
+              loop
+              playsInline
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={bg!}
+              alt=""
+              className="vk-kenburns absolute inset-0 h-full w-full object-cover"
+            />
+          )}
           <div
             className="absolute inset-0"
             style={{
@@ -142,7 +160,7 @@ export default function Result({
               textShadow: `0 0 22px ${blend.color}, 0 0 8px ${blend.color}, 0 2px 10px rgba(0,0,0,0.55)`,
             }}
           >
-            sos {personality}
+            {neutral ? personality : `sos ${personality}`}
           </motion.p>
 
           <motion.p
@@ -172,10 +190,10 @@ export default function Result({
           >
             <div className="inline-flex flex-col items-center rounded-3xl bg-white px-8 py-5 text-ink shadow-[0_14px_50px_rgba(0,0,0,0.45)]">
               <span className="font-display text-base font-black uppercase tracking-wide">
-                Acercate al Master Blender 🔥
+                {game.result.cta.title}
               </span>
               <span className="mt-0.5 text-[13px] font-semibold text-ink/60">
-                Probá tu sabor y descubrí los demás
+                {game.result.cta.subtitle}
               </span>
             </div>
 

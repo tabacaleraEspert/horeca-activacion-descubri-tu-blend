@@ -1,5 +1,7 @@
 // Dominio Van Kiff — "Descubrí tu Blend"
 
+import type { ComponentType } from "react";
+
 export type PersonalityKey =
   | "contemplativo"
   | "nativo"
@@ -42,7 +44,7 @@ export interface Blend {
   maxAge: number;
 }
 
-export type QuestionCategory = "montana" | "lifestyle";
+export type QuestionCategory = "montana" | "lifestyle" | "idolo";
 
 export interface Option {
   text: string;
@@ -72,4 +74,32 @@ export interface QuizResult {
   ranking: { key: PersonalityKey; score: number }[];
   /** true si el ganador natural no era elegible y se cayó al siguiente */
   fellBack: boolean;
+}
+
+export type GameId = "blend" | "idolo";
+
+/** Lo que cambia entre juegos; motor, quiz, resultado y kiosco son compartidos. */
+export interface GameConfig {
+  id: GameId;
+  selectQuestions: () => Question[];
+  /** false → sin formulario: los 7 blends son elegibles */
+  collectLead: boolean;
+  /** inactividad antes del modo atractor */
+  idleMs: number;
+  Welcome: ComponentType<{ onStart: () => void }>;
+  /** fondos del quiz; si falta se usa el arte de los blends */
+  quizBgs?: string[];
+  /** color de acento (progreso, selección) */
+  accent: string;
+  attract: { videos: string[]; images: string[] };
+  result: {
+    /** loop de video de fondo por blend */
+    video?: (b: Blend) => string;
+    /** poster/fondo fijo por blend (si no hay, arte del blend o color) */
+    image?: (b: Blend) => string;
+    /** etiqueta de personalidad sin género (si falta, usa la del lead) */
+    personality?: (b: Blend) => string;
+    cta: { title: string; subtitle: string };
+  };
+  preload: { images: string[]; videos: string[] };
 }

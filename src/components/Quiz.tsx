@@ -3,10 +3,16 @@
 import { AnimatePresence, motion, type Variants } from "motion/react";
 import { useMemo, useState } from "react";
 import { ALL_BLENDS } from "@/lib/blends";
-import type { Option, Question } from "@/lib/types";
+import type { GameConfig, Option, Question, QuestionCategory } from "@/lib/types";
 
 // Todos los fondos de arte disponibles (Drive).
 const ALL_BGS = ALL_BLENDS.flatMap((b) => b.bgs);
+
+const CATEGORY_LABEL: Record<QuestionCategory, string> = {
+  montana: "Montaña",
+  lifestyle: "La vida misma",
+  idolo: "Premios Ídolo",
+};
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -33,9 +39,11 @@ const item: Variants = {
 };
 
 export default function Quiz({
+  game,
   questions,
   onComplete,
 }: {
+  game: GameConfig;
   questions: Question[];
   onComplete: (answers: Option[]) => void;
 }) {
@@ -44,7 +52,10 @@ export default function Quiz({
   const [selected, setSelected] = useState<number | null>(null);
 
   // un fondo distinto por pregunta (orden aleatorio por sesión)
-  const bgs = useMemo(() => (ALL_BGS.length ? shuffle(ALL_BGS) : []), []);
+  const bgs = useMemo(() => {
+    const pool = game.quizBgs ?? ALL_BGS;
+    return pool.length ? shuffle(pool) : [];
+  }, [game.quizBgs]);
   const q = questions[idx];
   const hasImages = q.options.some((o) => o.image);
   const bg = bgs.length ? bgs[idx % bgs.length] : null;
@@ -66,7 +77,10 @@ export default function Quiz({
   }
 
   return (
-    <div className="fixed inset-0 overflow-hidden">
+    <div
+      className="fixed inset-0 overflow-hidden"
+      style={{ "--accent": game.accent } as React.CSSProperties}
+    >
       {/* Fondo de arte por pregunta */}
       <AnimatePresence mode="popLayout">
         {bg && (
@@ -97,7 +111,7 @@ export default function Quiz({
           <div className="mb-8 landscape:mb-5">
             <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-[0.25em]">
               <span className="text-white/75">
-                {q.category === "montana" ? "Montaña" : "La vida misma"}
+                {CATEGORY_LABEL[q.category]}
               </span>
               <span className="text-white/55">
                 {idx + 1}/{questions.length}
@@ -105,7 +119,7 @@ export default function Quiz({
             </div>
             <div className="h-3 w-full overflow-hidden rounded-full border-2 border-white/70 bg-white/10">
               <div
-                className="h-full rounded-full bg-teal transition-all duration-500"
+                className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>
@@ -150,7 +164,7 @@ export default function Quiz({
                         whileTap={{ scale: 0.96 }}
                         className={`group relative aspect-square overflow-hidden rounded-2xl border-2 text-left transition-all ${
                           isSel
-                            ? "border-teal shadow-[5px_5px_0_0_rgba(0,0,0,0.5)]"
+                            ? "border-[var(--accent)] shadow-[5px_5px_0_0_rgba(0,0,0,0.5)]"
                             : "border-white/55 shadow-[4px_4px_0_0_rgba(0,0,0,0.45)]"
                         } ${selected !== null && !isSel ? "opacity-40" : ""}`}
                       >
@@ -170,7 +184,7 @@ export default function Quiz({
                         />
                         <span
                           className={`absolute inset-x-0 bottom-0 px-3.5 pb-3 pt-8 text-base font-bold leading-tight landscape:text-sm ${
-                            isSel ? "text-teal" : "text-white"
+                            isSel ? "text-[var(--accent)]" : "text-white"
                           }`}
                           style={{ textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}
                         >
@@ -198,7 +212,7 @@ export default function Quiz({
                         whileTap={{ scale: 0.97 }}
                         className={`w-full rounded-2xl border-2 px-6 py-5 text-left text-lg font-semibold backdrop-blur-md transition-colors landscape:py-4 landscape:text-base ${
                           isSel
-                            ? "border-white bg-teal text-ink shadow-[5px_5px_0_0_rgba(0,0,0,0.5)]"
+                            ? "border-white bg-[var(--accent)] text-ink shadow-[5px_5px_0_0_rgba(0,0,0,0.5)]"
                             : "border-white/55 bg-black/35 text-white shadow-[4px_4px_0_0_rgba(0,0,0,0.45)] hover:bg-black/50"
                         } ${selected !== null && !isSel ? "opacity-40" : ""}`}
                       >

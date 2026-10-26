@@ -182,3 +182,31 @@ h2,
     transition: none;
   }
 }
+
+/* --- Premios Ídolo --- */
+@keyframes vk-gold-shine {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.vk-gold {
+  background: linear-gradient(100deg, #b8801c 0%, #fff4c2 22%, #f5c542 40%, #b8801c 60%, #fff4c2 80%, #f5c542 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 6px 30px rgba(0, 0, 0, 0.6));
+  animation: vk-gold-shine 4s linear infinite;
+}
+@keyframes vk-pulse-gold {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 197, 66, 0.55), 0 12px 40px rgba(0, 0, 0, 0.5); }
+  50% { box-shadow: 0 0 0 18px rgba(245, 197, 66, 0), 0 12px 40px rgba(0, 0, 0, 0.5); }
+}
+.vk-pulse-gold {
+  animation: vk-pulse-gold 2s ease-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vk-gold,
+  .vk-pulse-gold {
+    animation: none;
+  }
+}

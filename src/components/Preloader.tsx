@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
-import { PRELOAD_IMAGES, PRELOAD_VIDEOS } from "@/lib/assets";
 import { flushLeadQueue } from "@/lib/leadQueue";
+import type { GameConfig } from "@/lib/types";
 
 // Precachea TODO al arrancar (kiosko): el SW descarga fotos, packs y videos
 // completos a Cache Storage → tras la primera carga online la app funciona
 // entera sin wifi. También drena la cola de leads pendientes.
-export default function Preloader() {
+export default function Preloader({
+  images: PRELOAD_IMAGES,
+  videos: PRELOAD_VIDEOS,
+}: GameConfig["preload"]) {
   useEffect(() => {
     // Los chunks JS/fuentes del build no pasan por el SW en la primera carga
     // (todavía no controla la página): se listan acá — performance entries +
@@ -97,7 +100,7 @@ export default function Preloader() {
         navigator.serviceWorker.removeEventListener("controllerchange", precache);
       }
     };
-  }, []);
+  }, [PRELOAD_IMAGES, PRELOAD_VIDEOS]);
 
   return null;
 }

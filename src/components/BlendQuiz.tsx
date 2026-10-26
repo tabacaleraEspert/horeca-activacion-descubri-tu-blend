@@ -2,37 +2,35 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { computeResult, selectQuestions } from "@/lib/engine";
+import { computeResult } from "@/lib/engine";
 import { submitLead } from "@/lib/leadQueue";
-import type { Lead, Option, Question, QuizResult } from "@/lib/types";
+import type { GameConfig, Lead, Option, Question, QuizResult } from "@/lib/types";
 import AttractMode from "./AttractMode";
 import LeadForm from "./LeadForm";
 import Quiz from "./Quiz";
 import Result from "./Result";
-import Welcome from "./Welcome";
 
 type Stage = "welcome" | "lead" | "quiz" | "result";
 
-const IDLE_MS = 40000; // 40s sin tocar → modo atractor
-
-export default function BlendQuiz() {
+export default function BlendQuiz({ game }: { game: GameConfig }) {
+  const { Welcome } = game;
   const [stage, setStage] = useState<Stage>("welcome");
   const [lead, setLead] = useState<Lead | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [attract, setAttract] = useState(false);
 
-  function startQuiz(l: Lead) {
+  function startQuiz(l: Lead | null) {
     setLead(l);
-    setQuestions(selectQuestions());
+    setQuestions(game.selectQuestions());
     setStage("quiz");
   }
 
   function finishQuiz(answers: Option[]) {
-    if (!lead) return;
     const r = computeResult(answers, lead);
     setResult(r);
     setStage("result");
+    if (!lead) return; // juego sin toma de datos
     // offline-first: si no hay red queda en cola y se reenvía solo
     void submitLead({
       ...lead,
@@ -55,7 +53,7 @@ export default function BlendQuiz() {
     let t: ReturnType<typeof setTimeout>;
     const arm = () => {
       clearTimeout(t);
-      t = setTimeout(() => setAttract(true), IDLE_MS);
+      t = setTimeout(() => setAttract(true), game.idleMs);
     };
     window.addEventListener("pointerdown", arm);
     window.addEventListener("keydown", arm);
@@ -65,7 +63,7 @@ export default function BlendQuiz() {
       window.removeEventListener("pointerdown", arm);
       window.removeEventListener("keydown", arm);
     };
-  }, [attract]);
+  }, [attract, game.idleMs]);
 
   function dismissAttract() {
     setAttract(false);
@@ -73,12 +71,13 @@ export default function BlendQuiz() {
   }
 
   if (attract) {
-    return <AttractMode onDismiss={dismissAttract} />;
+    return <AttractMode media={game.attract} onDismiss={dismissAttract} />;
   }
 
   if (stage === "result" && result) {
     return (
       <Result
+        game={game}
         blend={result.blend}
         nombre={lead?.nombre ?? ""}
         genero={lead?.genero ?? "otro"}
@@ -104,9 +103,15 @@ export default function BlendQuiz() {
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-10 w-full"
         >
-          {stage === "welcome" && <Welcome onStart={() => setStage("lead")} />}
+          {stage === "welcome" && (
+            <Welcome
+              onStart={() => (game.collectLead ? setStage("lead") : startQuiz(null))}
+            />
+          )}
           {stage === "lead" && <LeadForm onSubmit={startQuiz} />}
-          {stage === "quiz" && <Quiz questions={questions} onComplete={finishQuiz} />}
+          {stage === "quiz" && (
+            <Quiz game={game} questions={questions} onComplete={finishQuiz} />
+          )}
         </motion.div>
       </AnimatePresence>
     </main>
