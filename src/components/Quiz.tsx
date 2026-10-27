@@ -92,7 +92,7 @@ export default function Quiz({
             animate={{ opacity: 1, scale: 1.12 }}
             exit={{ opacity: 0 }}
             transition={{ opacity: { duration: 0.6 }, scale: { duration: 8, ease: "linear" } }}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover will-change-transform"
           />
         )}
       </AnimatePresence>
@@ -100,7 +100,7 @@ export default function Quiz({
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(6,8,14,0.45) 0%, rgba(6,8,14,0.3) 38%, rgba(6,8,14,0.72) 100%)",
+            "radial-gradient(ellipse 75% 55% at 50% 52%, rgba(6,8,14,0.5) 0%, rgba(6,8,14,0.18) 100%)",
         }}
       />
 
@@ -108,16 +108,17 @@ export default function Quiz({
       <div className="absolute inset-0 z-10 flex overflow-y-auto py-10 landscape:py-6">
         <div className="m-auto w-full max-w-2xl px-6 text-white landscape:max-w-4xl">
           {/* progreso */}
-          <div className="mb-8 landscape:mb-5">
+          <div className="relative mb-8 landscape:mb-5">
+            <span aria-hidden className="vk-text-halo" />
             <div className="mb-2 flex items-center justify-between text-xs font-bold uppercase tracking-[0.25em]">
-              <span className="text-white/75">
+              <span className="text-white">
                 {CATEGORY_LABEL[q.category]}
               </span>
-              <span className="text-white/55">
+              <span className="text-white/85">
                 {idx + 1}/{questions.length}
               </span>
             </div>
-            <div className="h-3 w-full overflow-hidden rounded-full border-2 border-white/70 bg-white/10">
+            <div className="h-3 w-full overflow-hidden rounded-full border-2 border-white bg-black/50">
               <div
                 className="h-full rounded-full bg-[var(--accent)] transition-all duration-500"
                 style={{ width: `${progress}%` }}
@@ -136,9 +137,13 @@ export default function Quiz({
                 initial={{ opacity: 0, y: 26 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                className="mb-7 font-display text-4xl font-black uppercase leading-[1.02] tracking-tight landscape:mb-5 landscape:text-3xl"
-                style={{ textShadow: "0 4px 24px rgba(0,0,0,0.6)" }}
+                className="relative mb-7 font-display text-4xl font-black uppercase leading-[1.02] tracking-tight landscape:mb-5 landscape:text-3xl"
+                style={{
+                  textShadow:
+                    "0 2px 0 rgba(0,0,0,0.85), 0 0 18px rgba(0,0,0,0.9), 0 6px 32px rgba(0,0,0,0.7)",
+                }}
               >
+                <span aria-hidden className="vk-text-halo" />
                 {q.text}
               </motion.h2>
 
@@ -162,10 +167,10 @@ export default function Quiz({
                         onClick={() => choose(i)}
                         disabled={selected !== null}
                         whileTap={{ scale: 0.96 }}
-                        className={`group relative aspect-square overflow-hidden rounded-2xl border-2 text-left transition-all ${
-                          isSel
-                            ? "border-[var(--accent)] shadow-[5px_5px_0_0_rgba(0,0,0,0.5)]"
-                            : "border-white/55 shadow-[4px_4px_0_0_rgba(0,0,0,0.45)]"
+                        // Marco blanco grueso + sombra profunda: separa la foto del
+                        // fondo (que también es foto y de tonos parecidos).
+                        className={`group relative aspect-square overflow-hidden rounded-2xl border-4 text-left shadow-[0_14px_36px_rgba(0,0,0,0.7)] transition-[opacity,border-color] ${
+                          isSel ? "border-[var(--accent)]" : "border-white"
                         } ${selected !== null && !isSel ? "opacity-40" : ""}`}
                       >
                         <img
@@ -179,14 +184,18 @@ export default function Quiz({
                           className="absolute inset-0"
                           style={{
                             background:
-                              "linear-gradient(to top, rgba(6,8,14,0.92) 0%, rgba(6,8,14,0.35) 45%, rgba(6,8,14,0.05) 100%)",
+                              "linear-gradient(to top, rgba(6,8,14,0.95) 0%, rgba(6,8,14,0.7) 26%, rgba(6,8,14,0.15) 52%, rgba(6,8,14,0) 65%)",
                           }}
                         />
                         <span
-                          className={`absolute inset-x-0 bottom-0 px-3.5 pb-3 pt-8 text-base font-bold leading-tight landscape:text-sm ${
+                          // grande y grueso: se lee a distancia en el totem
+                          className={`absolute inset-x-0 bottom-0 px-4 pb-3.5 pt-8 font-display font-extrabold leading-[1.08] ${
                             isSel ? "text-[var(--accent)]" : "text-white"
                           }`}
-                          style={{ textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}
+                          style={{
+                            fontSize: "clamp(1.05rem, 3.6vmin, 1.6rem)",
+                            textShadow: "0 1px 2px rgba(0,0,0,0.9), 0 2px 14px rgba(0,0,0,0.85)",
+                          }}
                         >
                           {opt.text}
                         </span>
@@ -210,10 +219,10 @@ export default function Quiz({
                         onClick={() => choose(i)}
                         disabled={selected !== null}
                         whileTap={{ scale: 0.97 }}
-                        className={`w-full rounded-2xl border-2 px-6 py-5 text-left text-lg font-semibold backdrop-blur-md transition-colors landscape:py-4 landscape:text-base ${
+                        className={`w-full rounded-2xl border-2 px-6 py-5 text-left text-lg font-semibold transition-colors landscape:py-4 landscape:text-base ${
                           isSel
                             ? "border-white bg-[var(--accent)] text-ink shadow-[5px_5px_0_0_rgba(0,0,0,0.5)]"
-                            : "border-white/55 bg-black/35 text-white shadow-[4px_4px_0_0_rgba(0,0,0,0.45)] hover:bg-black/50"
+                            : "border-white/80 bg-black/60 text-white shadow-[4px_4px_0_0_rgba(0,0,0,0.45)] hover:bg-black/70"
                         } ${selected !== null && !isSel ? "opacity-40" : ""}`}
                       >
                         {opt.text}

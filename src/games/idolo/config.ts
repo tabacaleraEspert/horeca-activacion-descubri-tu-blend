@@ -17,7 +17,7 @@ const PERSONALITY: Record<PersonalityKey, string> = {
   romantico: "Alma romántica",
   sommelier: "Paladar sommelier",
   fiestero: "Modo fiesta",
-  curador: "Ojo curador",
+  curador: "Clase pura",
 };
 
 const slug = (b: Blend) => b.name.toLowerCase();

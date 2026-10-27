@@ -2,7 +2,7 @@
 # Uso: ./gen.sh [filtro]  — genera assets de Premios Ídolo con Higgsfield (gpt_image_2_5)
 # Salida: raw/<nombre>.png. Saltea los que ya existen.
 cd "$(dirname "$0")"
-STYLE_Q="Square editorial photograph for a premium awards-night campaign. Subject: %s. People seen from behind, cropped or in motion blur so no face is identifiable. Look: cinematic flash photography, deep blacks, glossy magazine style, gold and colored rim light, shallow depth of field, rich saturated color, high contrast. Absolutely no text, no letters, no logos, no cigarettes, no smoking."
+STYLE_Q="Bold minimal square image for a game answer card, instantly readable at a glance. ONE single clear subject: %s. Subject centered and large in frame, clean seamless backdrop with nothing else, soft studio lighting with gentle glow and soft shadow, glossy premium hyperreal product photography, vivid color. No people, no faces, no clutter, no scenery. Absolutely no text, no letters, no logos, no cigarettes, no smoking."
 STYLE_BG="Vertical cinematic background for a premium awards-night campaign. Scene: %s. No people. Lower third darker for text overlay. Look: glossy, cinematic lighting, volumetric haze, rich saturated color, high contrast, ultra detailed. Absolutely no text, no letters, no logos, no cigarettes, no smoking."
 one() {
   IFS=$'\t' read -r name ar res q subj <<<"$1"

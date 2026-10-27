@@ -31,7 +31,7 @@ export const IDOLO: Question[] = [
   {
     id: "i3",
     category: "idolo",
-    text: "Tu rider de camarín tiene sí o sí…",
+    text: "En tu camarín no puede faltar…",
     options: [
       { text: "Velas, flores y luz cálida", personality: "romantico", image: img("i3", "velas") },
       { text: "Un buen vino y tabla de quesos", personality: "sommelier", image: img("i3", "vino") },
@@ -67,7 +67,7 @@ export const IDOLO: Question[] = [
     text: "Elegí tu look para la alfombra roja",
     options: [
       { text: "Negro impecable", personality: "curador", image: img("i6", "negro") },
-      { text: "Brillos por todos lados", personality: "fiestero", image: img("i6", "brillos") },
+      { text: "Urbano: perlas, cuero y oversize", personality: "fiestero", image: img("i6", "urbano") },
       { text: "Vintage con historia", personality: "contemplativo", image: img("i6", "vintage") },
       { text: "Romántico en tonos pastel", personality: "romantico", image: img("i6", "pastel") },
     ],
@@ -90,8 +90,8 @@ export const IDOLO: Question[] = [
     options: [
       { text: "Teletransportarme a la naturaleza", personality: "nativo", image: img("i8", "naturaleza") },
       { text: "Que el finde dure 5 días", personality: "indulgente", image: img("i8", "finde") },
-      { text: "Paladar infalible", personality: "sommelier", image: img("i8", "paladar") },
-      { text: "Que todo se vea hermoso", personality: "romantico", image: img("i8", "hermoso") },
+      { text: "Adivinar cualquier vino de un sorbo", personality: "sommelier", image: img("i8", "paladar") },
+      { text: "Hacer florecer todo lo que toco", personality: "romantico", image: img("i8", "hermoso") },
     ],
   },
 ];

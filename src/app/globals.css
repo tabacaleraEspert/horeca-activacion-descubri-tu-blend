@@ -184,29 +184,46 @@ h2,
 }
 
 /* --- Premios Ídolo --- */
-@keyframes vk-gold-shine {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
+/* Solo transform/opacity animados (compositor): animar background-position o
+   box-shadow sobre el video repintaba toda la pantalla cada frame → lag en el totem. */
 .vk-gold {
-  background: linear-gradient(100deg, #b8801c 0%, #fff4c2 22%, #f5c542 40%, #b8801c 60%, #fff4c2 80%, #f5c542 100%);
-  background-size: 200% 100%;
+  background: linear-gradient(100deg, #c99227 0%, #fff4c2 30%, #f5c542 55%, #fff4c2 80%, #e0a93a 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 6px 30px rgba(0, 0, 0, 0.6));
-  animation: vk-gold-shine 4s linear infinite;
+  /* estático (no se anima): contorno oscuro + sombra para despegar del fondo */
+  filter: drop-shadow(0 2px 1px rgba(0, 0, 0, 0.85)) drop-shadow(0 4px 18px rgba(0, 0, 0, 0.7));
 }
-@keyframes vk-pulse-gold {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 197, 66, 0.55), 0 12px 40px rgba(0, 0, 0, 0.5); }
-  50% { box-shadow: 0 0 0 18px rgba(245, 197, 66, 0), 0 12px 40px rgba(0, 0, 0, 0.5); }
+@keyframes vk-pulse-ring {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.18, 1.45); opacity: 0; }
 }
 .vk-pulse-gold {
-  animation: vk-pulse-gold 2s ease-out infinite;
+  position: relative;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+.vk-pulse-gold::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 3px solid rgba(245, 197, 66, 0.9);
+  animation: vk-pulse-ring 2s ease-out infinite;
+  will-change: transform, opacity;
+  pointer-events: none;
 }
 @media (prefers-reduced-motion: reduce) {
-  .vk-gold,
-  .vk-pulse-gold {
+  .vk-pulse-gold::after {
     animation: none;
   }
+}
+
+/* Halo oscuro difuso detrás de textos sobre fotos brillantes: da contraste sin
+   oscurecer todo el fondo. El padre debe ser `relative`. */
+.vk-text-halo {
+  position: absolute;
+  inset: -1.25rem -2rem;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(4, 5, 10, 0.72), rgba(4, 5, 10, 0.45) 60%, transparent);
 }

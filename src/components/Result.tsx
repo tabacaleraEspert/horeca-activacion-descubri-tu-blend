@@ -72,7 +72,7 @@ export default function Result({
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.1) 28%, rgba(8,8,10,0.94) 78%)",
+                "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 30%, rgba(8,8,10,0.55) 55%, rgba(8,8,10,0.88) 85%)",
             }}
           />
         </>
@@ -119,7 +119,9 @@ export default function Result({
 
       {/* Contenido: mitad inferior en portrait, mitad derecha en landscape */}
       <div className="absolute inset-0 z-20 flex flex-col justify-end overflow-y-auto px-5 pb-14 pt-[45vh] landscape:left-1/2 landscape:justify-center landscape:px-8 landscape:pb-8 landscape:pt-8">
-        <div className="mx-auto w-full max-w-2xl text-center text-white landscape:max-w-lg">
+        {/* flex + items-center: si el nombre es más ancho que la columna, desborda
+            parejo a ambos lados (centrado) en vez de solo a la derecha */}
+        <div className="mx-auto flex w-full max-w-2xl flex-col items-center text-center text-white landscape:max-w-lg">
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -134,13 +136,14 @@ export default function Result({
             initial={{ opacity: 0, scale: 0.84, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ delay: 1.5, type: "spring", stiffness: 170, damping: 15 }}
-            className="font-display font-black uppercase leading-[0.85] tracking-tight"
+            className="whitespace-nowrap font-display font-black uppercase leading-[0.85] tracking-tight"
             style={{
-              // en landscape el nombre vive en media pantalla: más chico para
-              // que "AMERICAN" (el más largo) no se corte en el borde
+              // tope por ancho: "AMERICAN" (el más largo) debe entrar entero en
+              // su columna (media pantalla en landscape); si no, desborda y se
+              // ve descentrado
               fontSize: landscape
-                ? "clamp(2.75rem, 11.5vmin, 6rem)"
-                : "clamp(3.5rem, 16vmin, 9rem)",
+                ? "min(11.5vmin, 6.2vw, 6rem)"
+                : "min(16vmin, 13vw, 9rem)",
               textShadow: "0 6px 40px rgba(0,0,0,0.6)",
             }}
           >
